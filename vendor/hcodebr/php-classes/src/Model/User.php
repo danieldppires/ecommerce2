@@ -11,6 +11,48 @@
 		const SECRET = "HcodePhp7_Secret"; //Precisa ter pelo menos 16 caracteres (16, 24, 32, etc [são valores fixos?])
 		const SECRET_IV = "HcodePhp7_Secret_IV";
 
+		public static function getFromSession()
+		{
+			if (isset($_SESSION[User::SESSION]) && (int)$_SESSION[User::SESSION]['iduser'] > 0)
+			{
+				$user = new User();
+
+				$user->setData($_SESSION[User::SESSION]);
+			}
+
+			return $user;
+		}
+
+		public static function checkLogin($inadmin = true)
+		{
+			if (
+				!isset($_SESSION[User::SESSION])
+				||
+				!$_SESSION[User::SESSION] 
+				||
+				!(int)$_SESSION[User::SESSION]["iduser"] > 0
+			)
+			{
+				//Não está logado
+				return false;
+			}
+			else
+			{
+				if ($inadmin === true && (bool)$_SESSION[User::SESSION]['inadmin'] === true)
+				{
+					return true;
+				}
+				else if ($inadmin === false)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+
 		public static function login($login, $password)
 		{
 			$sql = new Sql();
@@ -44,15 +86,7 @@
 
 		public static function verifyLogin($inadmin = true)
 		{
-			if (
-				!isset($_SESSION[User::SESSION])
-				||
-				!$_SESSION[User::SESSION] 
-				||
-				!(int)$_SESSION[User::SESSION]["iduser"] > 0 //vazio converte para zero
-				||
-				(bool)$_SESSION[User::SESSION]["inadmin"] !== $inadmin
-			)
+			if (User::checkLogin($inadmin))
 			{
 				header("Location: /admin/login");
 				exit;
