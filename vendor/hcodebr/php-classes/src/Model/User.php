@@ -10,6 +10,8 @@
 		const SESSION = "User";
 		const SECRET = "HcodePhp7_Secret"; //Precisa ter pelo menos 16 caracteres (16, 24, 32, etc [são valores fixos?])
 		const SECRET_IV = "HcodePhp7_Secret_IV";
+		const ERROR = "UserError";
+		const ERROR_REGISTER = "UserErrorRegister";
 
 		public static function getFromSession()
 		{
@@ -26,11 +28,11 @@
 		public static function checkLogin($inadmin = true)
 		{
 			if (
-				!isset($_SESSION[User::SESSION])
+				!isset($_SESSION[User::SESSION]) //Sessão não definida
 				||
-				!$_SESSION[User::SESSION] 
+				!$_SESSION[User::SESSION] //Sessão definida, porém vazia
 				||
-				!(int)$_SESSION[User::SESSION]["iduser"] > 0
+				!(int)$_SESSION[User::SESSION]["iduser"] > 0 //Sessão definida, mas id vazio
 			)
 			{
 				//Não está logado
@@ -38,11 +40,11 @@
 			}
 			else
 			{
-				if ($inadmin === true && (bool)$_SESSION[User::SESSION]['inadmin'] === true)
+				if ($inadmin === true && (bool)$_SESSION[User::SESSION]['inadmin'] === true) //Usuário Adm e rota Adm
 				{
 					return true;
 				}
-				else if ($inadmin === false)
+				else if ($inadmin === false) //Rota não é Adm 
 				{
 					return true;
 				}
@@ -57,7 +59,7 @@
 		{
 			$sql = new Sql();
 
-			$results = $sql->select("SELECT * FROM tb_users WHERE deslogin = :LOGIN", array(
+			$results = $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b ON a.idperson = b.idperson WHERE a.deslogin = :LOGIN", array(
 				":LOGIN"=>$login
 			));
 
@@ -71,6 +73,8 @@
 			if (password_verify($password, $data["despassword"]))
 			{
 				$user = new User();
+
+				$data['desperson'] = utf8_encode($data['desperson']);
 
 				$user->setData($data);
 
@@ -86,9 +90,13 @@
 
 		public static function verifyLogin($inadmin = true)
 		{
-			if (User::checkLogin($inadmin))
+			if (!User::checkLogin($inadmin))
 			{
-				header("Location: /admin/login");
+				if ($inadmin)
+					header("Location: /admin/login");
+				else
+					header("Location: /login");
+
 				exit;
 			}
 		}
@@ -109,9 +117,9 @@
 			$sql = new Sql();
 
 			$results = $sql->select("CALL sp_users_save(:desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
-				":desperson"=>		$this->getdesperson(),
+				":desperson"=>		utf8_decode($this->getdesperson()),
 				":deslogin"=>		$this->getdeslogin(),
-				":despassword"=>	$this->getdespassword(),
+				":despassword"=>	User::getPasswordHash($this->getdespassword()),
 				":desemail"=>		$this->getdesemail(),
 				":nrphone"=>		$this->getnrphone(),
 				":inadmin"=>		$this->getinadmin()
@@ -126,6 +134,11 @@
 			$results = $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) WHERE a.iduser = :iduser", array(
 				":iduser"=>$iduser
 			));
+
+			$data = $results[0];
+
+			$data['desperson'] = utf8_encode($data['desperson']);
+
 			$this->setData($results[0]);
 		}
 
@@ -135,9 +148,9 @@
 
 			$results = $sql->select("CALL sp_usersupdate_save(:iduser, :desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
 				":iduser"=>			$this->getiduser(),
-				":desperson"=>		$this->getdesperson(),
+				":desperson"=>		utf8_decode($this->getdesperson()),
 				":deslogin"=>		$this->getdeslogin(),
-				":despassword"=>	$this->getdespassword(),
+				":despassword"=>	User::getPasswordHash($this->getdespassword()),
 				":desemail"=>		$this->getdesemail(),
 				":nrphone"=>		$this->getnrphone(),
 				":inadmin"=>		$this->getinadmin()
@@ -271,6 +284,25 @@
 			return password_hash($password, PASSWORD_DEFAULT, [
 				'cost'=>12
 			]);
+		}
+
+		public static function setError($msg)
+		{
+			$_SESSION[User::ERROR] = $msg;
+		}
+
+		public static function getError()
+		{
+			$msg = (isset($_SESSION[User::ERROR]) && $_SESSION[User::ERROR]) ? $_SESSION[User::ERROR] : '';
+
+			User::clearError();
+
+			return $msg;
+		}
+
+		public static function clearError()
+		{
+			$_SESSION[User::ERROR] = NULL;
 		}
 	}
 ?>
