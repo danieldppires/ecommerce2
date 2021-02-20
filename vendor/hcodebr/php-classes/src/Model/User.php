@@ -375,7 +375,7 @@
 			return $results;
 		}
 
-		public static function getPage($page = 1, $itemsPerPage = 2)
+		public static function getPage($page = 1, $itemsPerPage = 10)
 		{
 			$start = ($page - 1) * $itemsPerPage;
 			$sql = new Sql();
