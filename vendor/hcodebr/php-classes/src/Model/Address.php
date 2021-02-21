@@ -46,12 +46,11 @@
 		{
 			$sql = new Sql();
 
-			//RETIREI O CAMPO :desnumber PARA VER SE ASSIM SALVA NO BANCO, POIS NÃO ESTÁ SALVANDO E NÃO TEM ESSA COLUNA LÁ
-			$results = $sql->select("CALL sp_addresses_save(:idaddress, :idperson, :desaddress, :descomplement, :descity, :desstate, :descountry, :deszipcode, :desdistrict)", [
+			$results = $sql->select("CALL sp_addresses_save(:idaddress, :idperson, :desaddress, :desnumber, :descomplement, :descity, :desstate, :descountry, :deszipcode, :desdistrict)", [
 				':idaddress'=>$this->getidaddress(),
 				':idperson'=>$this->getidperson(),
 				':desaddress'=>utf8_decode($this->getdesaddress()),
-				//':desnumber'=>$this->getdesnumber(),
+				':desnumber'=>$this->getdesnumber(),
 				':descomplement'=>utf8_decode($this->getdescomplement()),
 				':descity'=>utf8_decode($this->getdescity()),
 				':desstate'=>utf8_decode($this->getdesstate()),
