@@ -241,11 +241,77 @@
 
 		$order->save();
 
-		header('Location: /order/' . $order->getidorder());
+		switch ((int)$_POST['payment-method'])
+		{
+			case 1:
+				header("Location: /order/" . $order->getidorder() . "/pagseguro");
+				break;
+
+			case 2:
+				header("Location: /order/" . $order->getidorder() . "/paypal");
+				break;
+		}
 		exit;
 	});
 
 	#CHECKOUT - END
+
+	#PAGSEGURO - BEGIN
+
+	$app->get("/order/:idorder/pagseguro", function($idorder)
+	{
+		User::verifyLogin(false);
+
+		$order = new Order();
+
+		$order->get((int)$idorder);
+
+		$cart = $order->getCart();
+
+		$page = new Page([
+			'header'=>false,
+			'footer'=>false
+		]);
+
+		$page->setTpl("payment-pagseguro", [
+			'order'=>$order->getValues(),
+			'cart'=>$cart->getValues(),
+			'products'=>$cart->getProducts(),
+			'phone'=>[
+				'areaCode'=>substr($order->getnrnumber(), 0 ,2),
+				'number'=>substr($order->getnrnumber(), 2, strlen($order->getnrphone()))
+			]
+		]);
+	});
+
+	#PAGSEGURO - END
+
+	#PAYPAL - BEGIN
+
+	$app->get("/order/:idorder/paypal", function($idorder)
+	{
+		User::verifyLogin(false);
+
+		$order = new Order();
+
+		$order->get((int)$idorder);
+
+		$cart = $order->getCart();
+
+		$page = new Page([
+			'header'=>false,
+			'footer'=>false
+		]);
+
+		$page->setTpl("payment-paypal", [
+			'order'=>$order->getValues(),
+			'cart'=>$cart->getValues(),
+			'products'=>$cart->getProducts()
+		]);
+	});
+
+	#PAYPAL - END
+
 
 	$app->get("/login", function()
 	{
